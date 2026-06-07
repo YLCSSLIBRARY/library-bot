@@ -2,11 +2,11 @@ import streamlit as st
 import google.generativeai as genai
 import re
 
-# --- 1. 網頁基本設定（提升視覺效果） ---
+# --- 1. 網頁基本設定 ---
 st.set_page_config(
     page_title="元朗天主教中學 - 智能選書師", 
     page_icon="📚", 
-    layout="wide"  # 寬版佈局，讓側邊欄與對話框並排更美觀
+    layout="wide"  # 寬版佈局
 )
 
 # --- 2. 綁定 Google 最新正式版模型 (Gemini 2.5 Flash) ---
@@ -16,14 +16,26 @@ try:
 except Exception as e:
     st.error("API Key 設定有誤，請檢查 Streamlit Secrets 設定。")
 
-# --- 3. 讀取館藏書單 ---
+# --- 3. 讀取館藏書單（已更新：同時支援中文及英文書單） ---
 @st.cache_data
 def load_all_books():
+    combined_lines = []
+    
+    # 嘗試讀取中文書單
     try:
-        with open("books.txt", "r", encoding="utf-8") as f:
-            return f.readlines()
-    except:
-        return []
+        with open("Chinese_book.txt", "r", encoding="utf-8") as f:
+            combined_lines.extend(f.readlines())
+    except Exception as e:
+        st.warning(f"⚠️ 系統提示：未能讀取 Chinese_book.txt，請檢查檔名或路徑。")
+        
+    # 嘗試讀取英文書單
+    try:
+        with open("English_book.txt", "r", encoding="utf-8") as f:
+            combined_lines.extend(f.readlines())
+    except Exception as e:
+        st.warning(f"⚠️ 系統提示：未能讀取 English_book.txt，請檢查檔名或路徑。")
+        
+    return combined_lines
 
 all_book_lines = load_all_books()
 
@@ -42,7 +54,7 @@ with st.sidebar:
     st.info("❤️ 人際關係 / 友情 / 溝通\n\n💪 心理勵志 / 情緒舒緩\n\n🎯 考試壓力 / 讀書奮鬥\n\n🌱 孤獨焦慮 / 未來夢想")
     
     st.markdown("---")
-    st.caption("© 元朗天主教中學 圖書館 | 智能AI選書師 v2.5")
+    st.caption("© 元朗天主教中學 圖書館 | 智能AI選書師 v2.6")
 
 # --- 5. 主網頁中央排版美化 ---
 col1, col2, col3 = st.columns([1, 6, 1])
@@ -139,12 +151,13 @@ with col2:
                 {books_context}
                 
                 【你的核心任務】：
-                1. 請先用非常親切、溫暖、充滿校園關懷的廣東話口吻（中學老師的語氣），深入回應學生的心情或學術需求。
+                1. 請先用非常親切、溫暖、充滿校園關懷的廣東話口吻（中學老師的語氣），深入回應學生的心情 or 學術需求。
                 2. 從上方提供的【相關館藏】中，挑選出 2 至 3 本最適合、最能幫助同學的書推薦給他們。
                 3. **請使用清晰、漂亮、有條理的排版**輸出推薦書籍（嚴禁虛構列表以外的書），格式要求如下：
                    
                    ---
-                   ### 📖 推薦書籍一：《書名》
+                   ### 📖 推薦書籍：簡短精美呈現
+                   - 📚 **書名**：《書名》
                    - 📌 **索書號**：[索書號]
                    - 💡 **心靈推薦原因**：[結合學生的困擾或探究主題，寫出具體且溫暖的推薦理由]
                    - 🔍 **館藏動態查詢**：[👉 點擊這裡查看借閱狀態](https://ylcss.trccloud.hk/opac/search/[處理後的書名])
