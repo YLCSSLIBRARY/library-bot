@@ -10,7 +10,7 @@ st.title("📚 元朗天主教中學 - 智能選書師")
 try:
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
     # 使用官方最穩定、對香港免 VPN 開放的免費主力模型
-    model = genai.GenerativeModel('gemini-1.5-flash')
+    model = genai.GenerativeModel('gemini-2.5-flash')
 except Exception as e:
     st.error("API Key 設定有誤，請檢查 Streamlit Secrets 設定。")
 
