@@ -61,7 +61,7 @@ system_prompt = f"""
 
 # --- 初始化 AI 模型 (強制使用 latest 版本確保伺服器連線) ---
 model = genai.GenerativeModel(
-    model_name='gemini-1.5-flash', 
+    model_name='gemini-2.0-flash', 
     system_instruction=system_prompt
 )
 
