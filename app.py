@@ -33,7 +33,7 @@ def expand_and_search_books(user_input, book_lines, max_results=20):
         "人際關係": ["鬧交", "吵架", "朋友", "同學", "屋企人", "父母", "溝通", "欺凌", "排擠", "拍拖", "分手", "爭執", "不和"],
         "心理勵志": ["唔開心", "傷心", "難過", "頂唔順", "心累", "失敗", "挫折", "正能量", "心靈", "情緒", "哭", "無助", "抑鬱", "難受"],
         "壓力": ["考試", "功課", "測驗", "讀書", "溫書", "sba", "專題", "好累", "壓抑", "溫習", "辛酸", "溫不到", "考不好"],
-        "孤獨": ["一個人的", "自閉", "冇人理", "寂寞", "排擠", "孤單", "缺席", "單獨"],
+        "孤獨": ["一個人的", "自閉", "冇人理", "寂寞", "排擠", "孤單", "缺席", "單逐"],
         "焦慮": ["好驚", "緊張", "失眠", "擔心", "未知", "未來", "恐懼", "不知所措", "害怕"],
         "夢想": ["將來", "目標", "迷茫", "前途", "人生", "奮鬥", "堅持", "勇氣", "理想"]
     }
@@ -112,7 +112,7 @@ if prompt := st.chat_input("你想搵咩書？或者同我傾下心事..."):
             relevant_books = expand_and_search_books(prompt, all_book_lines)
             books_context = "\n".join(relevant_books) if relevant_books else "暫時沒有完全匹配的館藏標籤。"
             
-            # 制定給 Gemini 的溫慢指令（已更新網址空格轉換規則）
+            # 制定給 Gemini 的溫馨指令
             agent_instruction = f"""
             你是「元朗天主教中學 (YLCS) 圖書館智能選書師」。
             
@@ -132,4 +132,17 @@ if prompt := st.chat_input("你想搵咩書？或者同我傾下心事..."):
                在填寫上方 [處理後的書名] 時，如果該書名當中「含有任何空格」（常見於英文書名或有副標題的書），你必須將書名入面所有的空格全部替換為「+」號！
                例如：
                - 如果書名是 "Harry Potter"，網址必須輸出為：https://ylcss.trccloud.hk/opac/search/Harry+Potter
-               - 如果書名是 "Mental Health 101"，網址必須輸出為：
+               - 如果書名是 "Mental Health 101"，網址必須輸出為：https://ylcss.trccloud.hk/opac/search/Mental+Health+101
+               嚴禁在網址括號 () 內留有任何原始空格，否則連結會斷開失效。
+            
+            4. 如果【相關館藏】為空或裡面確實沒有同學想要的特定主題書籍，請溫柔地安慰同學，並鼓勵他們換個說法，或隨時親自來圖書館櫃檯搵老師傾計。
+            
+            同學現在說："{prompt}"
+            """
+            
+            try:
+                response = model.generate_content(agent_instruction)
+                st.markdown(response.text)
+                st.session_state.messages.append({"role": "assistant", "content": response.text})
+            except Exception as e:
+                st.error(f"選書師思考中，請稍後再試。錯誤代碼：{str(e)[:50]}")
