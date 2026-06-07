@@ -1,6 +1,5 @@
 import streamlit as st
 import google.generativeai as genai
-import os
 
 # --- UI 介面設定 (iPad 完美比例) ---
 st.set_page_config(page_title="元朗天主教中學 - 智能選書師", page_icon="📚", layout="centered")
@@ -8,7 +7,6 @@ st.title("📚 元朗天主教中學 - 智能選書師")
 st.markdown("同學你好！有咩想睇嘅書，或者遇到咩功課/心情問題，隨時同我講！")
 
 # --- 讀取 API Key ---
-# 系統會從 Streamlit 的 Secrets 中讀取你在第一步拿到的 API Key
 genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
 
 # --- 讀取書單 (方便日後更新) ---
@@ -61,8 +59,11 @@ system_prompt = f"""
 數字快捷鍵提示：「輸入 1-5 睇特定書籍嘅詳細介紹 | 輸入 6 換一盤全新書比你 | 隨時話我知你想轉咩主題！」
 """
 
-# --- 初始化 AI 模型 ---
-model = genai.GenerativeModel('gemini-1.5-flash', system_instruction=system_prompt)
+# --- 初始化 AI 模型 (強制使用 latest 版本確保伺服器連線) ---
+model = genai.GenerativeModel(
+    model_name='gemini-1.5-flash-latest', 
+    system_instruction=system_prompt
+)
 
 # --- 聊天紀錄系統 (保持對話記憶) ---
 if "messages" not in st.session_state:
@@ -84,12 +85,17 @@ if prompt := st.chat_input("輸入你想搵嘅書，例如：「我想睇歷史�
     with st.chat_message("assistant"):
         # 將歷史對話轉化為 Gemini 讀得懂的格式
         history = [{"role": "user" if m["role"] == "user" else "model", "parts": [m["content"]]} for m in st.session_state.messages[:-1]]
-        chat = model.start_chat(history=history)
         
-        # 顯示 loading 狀態並取得回應
-        with st.spinner("圖書館書架努力搜尋中..."):
-            response = chat.send_message(prompt)
-            st.markdown(response.text)
+        try:
+            # 準備對話與發送請求
+            chat = model.start_chat(history=history)
+            with st.spinner("圖書館書架努力搜尋中..."):
+                response = chat.send_message(prompt)
+                st.markdown(response.text)
+                
+            # 成功後才儲存 AI 的回覆到記憶中
+            st.session_state.messages.append({"role": "assistant", "content": response.text})
             
-    # 儲存 AI 的回覆到記憶中
-    st.session_state.messages.append({"role": "assistant", "content": response.text})
+        except Exception as e:
+            # 解除 Streamlit 錯誤屏蔽，直接顯示致命死因！
+            st.error(f"⚠️ 系統連線發生錯誤！\n\n**Google 伺服器詳細回報：**\n`{str(e)}`\n\n💡 **管理員小提示：** 如果上面顯示 API_KEY_INVALID，請返回 Streamlit 重新檢查 Secrets 入面的金鑰是否有錯字或多咗空格！")
