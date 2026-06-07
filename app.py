@@ -6,7 +6,7 @@ import re
 st.set_page_config(
     page_title="元朗天主教中學 - 智能選書師", 
     page_icon="📚", 
-    layout="wide"  # 改為寬版佈局，讓側邊欄與對話框並排更美觀
+    layout="wide"  # 寬版佈局，讓側邊欄與對話框並排更美觀
 )
 
 # --- 2. 綁定 Google 最新正式版模型 (Gemini 2.5 Flash) ---
@@ -30,7 +30,7 @@ all_book_lines = load_all_books()
 # --- 4. 左側專業功能欄 (Sidebar Layout) ---
 with st.sidebar:
     st.image("https://img.icons8.com/fluent/96/000000/books.png", width=80)
-    st.title("YLCSS 圖書館")
+    st.title("YLCS 圖書館")
     st.subheader("📚 智能選書師系統")
     st.markdown("---")
     
@@ -45,7 +45,6 @@ with st.sidebar:
     st.caption("© 元朗天主教中學 圖書館 | 智能AI選書師 v2.5")
 
 # --- 5. 主網頁中央排版美化 ---
-# 使用 Columns 讓主標題置中
 col1, col2, col3 = st.columns([1, 6, 1])
 with col2:
     st.title("📚 元朗天主教中學 - 智能選書師")
@@ -168,14 +167,14 @@ with col2:
                 同學現在說："{prompt}"
                 """
                 
-try:
-                response = model.generate_content(agent_instruction)
-                st.markdown(response.text)
-                st.session_state.messages.append({"role": "assistant", "content": response.text})
-            except Exception as e:
-                # 專門捕捉 429 Quota 錯誤，轉化為溫暖嘅廣東話提示
-                error_msg = str(e)
-                if "429" in error_msg or "quota" in error_msg.lower():
-                    st.warning("☕ **選書師悄悄話：**\n\n唔好意思啊同學仔！依家圖書館櫃檯有少少輪候人數過多（系統繁忙），選書師需要倒杯水、抖 1 分鐘。請你等陣（大約一分鐘後）再同我傾過啦！如果急嘅話，隨時歡迎你直接行過嚟圖書館櫃檯搵老師傾計㗎！😊")
-                else:
-                    st.error(f"選書師思考中，請稍後再試。錯誤代碼：{error_msg[:50]}")
+                try:
+                    response = model.generate_content(agent_instruction)
+                    st.markdown(response.text)
+                    st.session_state.messages.append({"role": "assistant", "content": response.text})
+                except Exception as e:
+                    # 專門捕捉 429 Quota 錯誤，轉化為溫暖嘅廣東話提示
+                    error_msg = str(e)
+                    if "429" in error_msg or "quota" in error_msg.lower():
+                        st.warning("☕ **選書師悄悄話：**\n\n唔好意思啊同學仔！依家圖書館櫃檯有少少輪候人數過多（系統繁忙），選書師需要倒杯水、抖 1 分鐘。請你等陣（大約一分鐘後）再同我傾過啦！如果急嘅話，隨時歡迎你直接行過嚟圖書館櫃檯搵老師傾計㗎！😊")
+                    else:
+                        st.error(f"選書師思考中，請稍後再試。錯誤代碼：{error_msg[:50]}")
