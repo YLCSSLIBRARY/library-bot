@@ -64,7 +64,6 @@ model = genai.GenerativeModel(
     model_name='models/gemini-1.5-flash', 
     system_instruction=system_prompt
 )
-)
 
 # --- 聊天紀錄系統 (保持對話記憶) ---
 if "messages" not in st.session_state:
