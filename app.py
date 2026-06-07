@@ -168,9 +168,14 @@ with col2:
                 同學現在說："{prompt}"
                 """
                 
-                try:
-                    response = model.generate_content(agent_instruction)
-                    st.markdown(response.text)
-                    st.session_state.messages.append({"role": "assistant", "content": response.text})
-                except Exception as e:
-                    st.error(f"選書師思考中，請稍後再試。錯誤代碼：{str(e)[:50]}")
+try:
+                response = model.generate_content(agent_instruction)
+                st.markdown(response.text)
+                st.session_state.messages.append({"role": "assistant", "content": response.text})
+            except Exception as e:
+                # 專門捕捉 429 Quota 錯誤，轉化為溫暖嘅廣東話提示
+                error_msg = str(e)
+                if "429" in error_msg or "quota" in error_msg.lower():
+                    st.warning("☕ **選書師悄悄話：**\n\n唔好意思啊同學仔！依家圖書館櫃檯有少少輪候人數過多（系統繁忙），選書師需要倒杯水、抖 1 分鐘。請你等陣（大約一分鐘後）再同我傾過啦！如果急嘅話，隨時歡迎你直接行過嚟圖書館櫃檯搵老師傾計㗎！😊")
+                else:
+                    st.error(f"選書師思考中，請稍後再試。錯誤代碼：{error_msg[:50]}")
