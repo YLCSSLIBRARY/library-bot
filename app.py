@@ -1,13 +1,13 @@
 import streamlit as st
 import google.generativeai as genai
 import re
-import random  # 引入隨機庫，用於激活成萬本館藏嘅盲盒機制
+import random  # 引入隨機庫，用於激活盲盒洗牌機制
 
 # --- 1. 網頁基本設定 ---
 st.set_page_config(
     page_title="元朗天主教中學 - 智能選書師", 
     page_icon="📚", 
-    layout="wide"
+    layout="wide"  # 使用寬版頁面
 )
 
 # --- 2. 解析多 Key 輪替池（核心安全機制：應對 429 流量限制） ---
@@ -50,16 +50,14 @@ with st.sidebar:
     st.markdown("### 🌟 心靈充電站")
     st.info("❤️ 人際關係 / 友情 / 溝通\n\n💪 心理勵志 / 情緒舒緩\n\n🎯 考試壓力 / 讀書奮鬥\n\n🌱 孤獨焦慮 / 未來夢想")
     st.markdown("---")
-    st.caption("© 元朗天主教中學 圖書館 | 智能AI選書師 v2.8 (盲盒測試版)")
+    st.caption("© 元朗天主教中學 圖書館 | 智能AI選書師 v2.9 (終極排版版)")
 
-# --- 5. 主網頁中央排版 ---
-col1, col2, col3 = st.columns([1, 6, 1])
-with col2:
-    st.title("📚 元朗天主教中學 - 智能選書師")
-    st.markdown("### *「每一本書，都是治癒心靈的溫暖配方。」*")
-    st.info("👋 **同學仔你好！** 我係你嘅專屬智能選書師。今日過得點呀？無論你想搵特定嘅學術書做 Project，定係想搵本小說散下心、傾下心事，我都會喺我哋學校嘅圖書館館藏度幫你細心挑選最啱你嘅書。👇")
+# --- 5. 主網頁標頭（全螢幕標準寬度，確保內容清晰） ---
+st.title("📚 元朗天主教中學 - 智能選書師")
+st.markdown("### *「每一本書，都是治癒心靈的溫暖配方。」*")
+st.info("👋 **同學仔你好！** 我係你嘅專屬智能選書師。今日過得點呀？無論你想搵特定嘅學術書做 Project，定係想搵本小說散下心、傾下心事，我都會喺我哋學校嘅圖書館館藏度幫你細心挑選最啱你嘅書。👇")
 
-# --- 6. 本地語意關鍵字過濾器（已完美融入隨機洗牌黑科技） ---
+# --- 6. 本地語意關鍵字過濾器（盲盒隨機洗牌機制） ---
 def expand_and_search_books(user_input, book_lines, max_results=20):
     user_input_lower = user_input.lower()
     synonyms_map = {
@@ -101,4 +99,108 @@ def expand_and_search_books(user_input, book_lines, max_results=20):
             if any(tag in line for tag in target_tags):
                 matched_books.append(line.strip())
                 
-        # 【優
+        # 盲盒機制：打亂精確匹配到的書單
+        random.shuffle(matched_books)
+                
+    if not matched_books:
+        # 模糊權重匹配
+        ignored_chars = "我你佢想找找有冇嘅的了呢吧嗎請邊度顯示幫推本個批啲書版年上下中各與及和或呀啦"
+        valid_chars = [c for c in user_input if c not in ignored_chars and not c.isspace()]
+        if valid_chars:
+            weighted_matches = []
+            for line in book_lines:
+                match_count = sum(1 for c in valid_chars if c in line)
+                if match_count > 0:
+                    weighted_matches.append((match_count, line.strip()))
+            
+            # 打亂相同權重分數的書
+            random.shuffle(weighted_matches)
+            weighted_matches.sort(key=lambda x: x[0], reverse=True)
+            matched_books = [item[1] for item in weighted_matches]
+                
+    return matched_books[:max_results]
+
+# --- 7. 顯示歷史對話（移出 Column，直屬根目錄以支援完美捲動） ---
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
+
+# --- 8. 處理同學輸入（直屬根目錄：Streamlit 會自動將其永久固定喺網頁最底部） ---
+if prompt := st.chat_input("你想搵咩書？或者同我傾下心事..."):
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    with st.chat_message("user"):
+        st.markdown(prompt)
+    
+    with st.chat_message("assistant"):
+        with st.spinner("選書師正在感同身受，並在館藏中為你挑選心靈配方..."):
+            
+            relevant_books = expand_and_search_books(prompt, all_book_lines)
+            books_context = "\n".join(relevant_books) if relevant_books else "暫時沒有完全匹配的館藏標籤。"
+            
+            agent_instruction = f"""
+            你是「元朗天主教中學 (YLCS) 圖書館智能選書師」。
+            
+            【目前由系統為同學精選出的相關館藏】：
+            {books_context}
+            
+            【你的核心任務】：
+            1. 請先用非常親切、溫慢、充滿校園關懷的廣東話口吻（中學老師的語氣），深入回應學生的心情 or 學術需求。
+            2. 從上方提供的【相關館藏】中，挑選出 2 至 3 本最適合、最能幫助同學的書推薦給他們。
+            3. **請使用清晰、漂亮、有條理的排版**輸出推薦書籍（嚴禁虛構列表以外的書），格式要求如下：
+               
+               ---
+               ### 📖 推薦書籍：簡短精美呈現
+               - 📚 **書名**：《書名》
+               - 📌 **索書號**：[索書號]
+               - 💡 **心靈推薦原因**：[結合學生的困擾或探究主題，寫出具體且溫暖的推薦理由]
+               - 🔍 **館藏動態查詢**：[👉 點擊這裡查看借閱狀態](https://ylcss.trccloud.hk/opac/search/[處理後的書名])
+               
+               ---
+               
+               ⚠️【網址生成最高指導原則（極重要）】：
+               在填寫上方網址的 `[處理後的書名]` 時，你必須對書名進行以下符號編碼轉換：
+               - **規則 A (空格轉換)**：如果書名內含有「任何空格」（不論前後或中間），你必須將所有的空格全部替換為「+」號。
+                 * 例如："Harry Potter" 必須轉換為 `Harry+Potter`
+               - **規則 B (冒號轉換)**：如果書名內含有「半形冒號 :」或「全形冒號 ：」，你必須將所有的冒號全部替換為 `%%3A`（註：在代碼中請輸出為 %%3A 以便正常解析）。
+                 * 例如："歷史：中港關係" 必須轉換為 `歷史%%3A中港關係`
+               
+               嚴禁在網址括號 () 內留有任何原始空格 or 冒號，確保同學點擊時能直接直達學校的 OPAC 系統。
+            
+            4. 如果【相關館藏】為空，請溫柔地安慰同學，並鼓勵他們換個說法，或隨時親自來圖書館櫃檯搵老師傾計。
+            
+            同學現在說："{prompt}"
+            """
+            
+            # --- 多 Key 輪替重試機制 ---
+            response_text = None
+            api_call_success = False
+            
+            if not api_key_pool:
+                st.error("❌ 系統錯誤：目前沒有可用的 API Key，請檢查 Secrets 設定。")
+            else:
+                for idx, current_key in enumerate(api_key_pool):
+                    try:
+                        genai.configure(api_key=current_key)
+                        temp_model = genai.GenerativeModel('gemini-2.5-flash')
+                        
+                        response = temp_model.generate_content(agent_instruction)
+                        response_text = response.text
+                        api_call_success = True
+                        break
+                    except Exception as e:
+                        err_msg = str(e)
+                        if "429" in err_msg or "quota" in err_msg.lower():
+                            if idx < len(api_key_pool) - 1:
+                                continue
+                            else:
+                                st.warning("☕ **選書師悄悄話：**\n\n唔好意思啊同學仔！依家圖書館櫃檯真係太熱鬧啦（所有智能通道正忙），選書師需要倒杯水、抖 1 分鐘。請你等陣（大約一分鐘後）再同我傾過啦！如果急嘅話，隨時歡迎你直接行過嚟圖書館櫃檯搵老師傾計㗎！😊")
+                        else:
+                            st.error(f"選書師思考中遇到非流量錯誤。錯誤代碼：{err_msg[:50]}")
+                            break
+            
+            if api_call_success and response_text:
+                st.markdown(response_text)
+                st.session_state.messages.append({"role": "assistant", "content": response_text})
