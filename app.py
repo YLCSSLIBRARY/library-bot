@@ -41,7 +41,7 @@ all_book_lines = load_all_books()
 # --- 4. 左側專業功能欄 (Sidebar) ---
 with st.sidebar:
     st.image("https://img.icons8.com/fluent/96/000000/books.png", width=80)
-    st.title("YLCS 圖書館")
+    st.title("YLCSS 圖書館")
     st.subheader("📚 智能選書師系統")
     st.markdown("---")
     st.markdown("### 💡 使用小貼士")
