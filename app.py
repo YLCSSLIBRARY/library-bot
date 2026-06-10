@@ -5,7 +5,7 @@ import random  # 引入隨機庫，用於激活盲盒洗牌機制
 
 # --- 1. 網頁基本設定 ---
 st.set_page_config(
-    page_title="元朗天主教中學 - 智能選書師", 
+    page_title="元天閱讀腦朋友 - YLCSS 圖書館", 
     page_icon="📚", 
     layout="wide"  # 使用寬版頁面
 )
@@ -42,20 +42,20 @@ all_book_lines = load_all_books()
 with st.sidebar:
     st.image("https://img.icons8.com/fluent/96/000000/books.png", width=80)
     st.title("YLCSS 圖書館")
-    st.subheader("📚 智能選書師系統")
+    st.subheader("📚 元天閱讀腦朋友")
     st.markdown("---")
     st.markdown("### 💡 使用小貼士")
-    st.caption("同學可以直接輸入你想搵嘅書名、作者或主題（例如：歷史、心理學），亦可以喺下面揀個心情同選書師傾下計，等佢為你調配心靈處方。")
+    st.caption("同學可以直接輸入你想搵嘅書名、作者或主題（例如：歷史、心理學），亦可以喺下面揀個心情同腦朋友傾下計，等佢為你調配心靈處方。")
     st.markdown("---")
     st.markdown("### 🌟 心靈充電站")
     st.info("❤️ 人際關係 / 友情 / 溝通\n\n💪 心理勵志 / 情緒舒緩\n\n🎯 考試壓力 / 讀書奮鬥\n\n🌱 孤獨焦慮 / 未來夢想")
     st.markdown("---")
-    st.caption("© 元朗天主教中學 圖書館 | 智能AI選書師 v2.9 (終極排版版)")
+    st.caption("© 元朗天主教中學 圖書館 | 元天閱讀腦朋友 v3.0 (正式命名版)")
 
 # --- 5. 主網頁標頭（全螢幕標準寬度，確保內容清晰） ---
-st.title("📚 元朗天主教中學 - 智能選書師")
+st.title("📚 元天閱讀腦朋友")
 st.markdown("### *「每一本書，都是治癒心靈的溫暖配方。」*")
-st.info("👋 **同學仔你好！** 我係你嘅專屬智能選書師。今日過得點呀？無論你想搵特定嘅學術書做 Project，定係想搵本小說散下心、傾下心事，我都會喺我哋學校嘅圖書館館藏度幫你細心挑選最啱你嘅書。👇")
+st.info("👋 **同學仔你好！** 我係你嘅專屬「元天閱讀腦朋友」。今日過得點呀？無論你想搵特定嘅學術書做 Project，定係想搵本小說散下心、傾下心事，我都會喺我哋學校嘅圖書館館藏度幫你細心挑選最啱你嘅書。👇")
 
 # --- 6. 本地語意關鍵字過濾器（盲盒隨機洗牌機制） ---
 def expand_and_search_books(user_input, book_lines, max_results=20):
@@ -135,19 +135,19 @@ if prompt := st.chat_input("你想搵咩書？或者同我傾下心事..."):
         st.markdown(prompt)
     
     with st.chat_message("assistant"):
-        with st.spinner("選書師正在感同身受，並在館藏中為你挑選心靈配方..."):
+        with st.spinner("「元天閱讀腦朋友」正在聽你傾訴，並在館藏中為你挑選心靈配方..."):
             
             relevant_books = expand_and_search_books(prompt, all_book_lines)
             books_context = "\n".join(relevant_books) if relevant_books else "暫時沒有完全匹配的館藏標籤。"
             
             agent_instruction = f"""
-            你是「元朗天主教中學 (YLCS) 圖書館智能選書師」。
+            你是「元朗天主教中學 (YLCSS) 圖書館」專屬的 AI 夥伴——「元天閱讀腦朋友」。
             
             【目前由系統為同學精選出的相關館藏】：
             {books_context}
             
             【你的核心任務】：
-            1. 請先用非常親切、溫慢、充滿校園關懷的廣東話口吻（中學老師的語氣），深入回應學生的心情 or 學術需求。
+            1. 請先用非常親切、溫慢、充滿校園關懷的廣東話口吻（中學老師與知心好友的雙重語氣），深入回應學生的心情 or 學術需求。
             2. 從上方提供的【相關館藏】中，挑選出 2 至 3 本最適合、最能幫助同學的書推薦給他們。
             3. **請使用清晰、漂亮、有條理的排版**輸出推薦書籍（嚴禁虛構列表以外的書），格式要求如下：
                
@@ -169,7 +169,7 @@ if prompt := st.chat_input("你想搵咩書？或者同我傾下心事..."):
                
                嚴禁在網址括號 () 內留有任何原始空格 or 冒號，確保同學點擊時能直接直達學校的 OPAC 系統。
             
-            4. 如果【相關館藏】為空，請溫柔地安慰同學，並鼓勵他們換個說法，或隨時親自來圖書館櫃檯搵老師傾計。
+            4. 如果【相關館藏】為空，請溫柔地安慰同學，並鼓勵他們換個說法，或隨時親自來圖書館櫃檯搵老師、搵「腦朋友」本尊傾計。
             
             同學現在說："{prompt}"
             """
@@ -196,9 +196,9 @@ if prompt := st.chat_input("你想搵咩書？或者同我傾下心事..."):
                             if idx < len(api_key_pool) - 1:
                                 continue
                             else:
-                                st.warning("☕ **選書師悄悄話：**\n\n唔好意思啊同學仔！依家圖書館櫃檯真係太熱鬧啦（所有智能通道正忙），選書師需要倒杯水、抖 1 分鐘。請你等陣（大約一分鐘後）再同我傾過啦！如果急嘅話，隨時歡迎你直接行過嚟圖書館櫃檯搵老師傾計㗎！😊")
+                                st.warning("☕ **閱讀腦朋友悄悄話：**\n\n唔好意思啊同學仔！依家圖書館櫃檯真係太熱鬧啦（所有智能通道正忙），腦朋友需要倒杯水、抖 1 分鐘。請你等陣（大約一分鐘後）再同我傾過啦！如果急嘅話，隨時歡迎你直接行過嚟圖書館櫃檯搵老師傾計㗎！😊")
                         else:
-                            st.error(f"選書師思考中遇到非流量錯誤。錯誤代碼：{err_msg[:50]}")
+                            st.error(f"腦朋友思考中遇到非流量錯誤。錯誤代碼：{err_msg[:50]}")
                             break
             
             if api_call_success and response_text:
