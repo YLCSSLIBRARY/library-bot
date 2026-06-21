@@ -38,6 +38,46 @@ def load_all_books():
 
 all_book_lines = load_all_books()
 
+# ==========================================
+# 【新嵌入功能】本地校園常見問題 (FAQ) 攔截器
+# ==========================================
+def check_campus_faq(user_input):
+    """
+    針對圖書館物理位置及開放時間進行本地精準攔截，100% 杜絕 AI 幻覺。
+    """
+    # 進行字詞模糊化與繁簡容錯處理
+    normalized = user_input.strip().replace("舘", "館").replace("边", "邊")
+    
+    # 偵測關鍵字組合
+    has_library = "圖書館" in normalized or "library" in normalized.lower()
+    
+    # 判斷位置相關問題
+    is_location_query = any(k in normalized for k in ["邊", "位置", "幾樓", "點去", "喺邊", "邊度", "地址"])
+    # 判斷時間相關問題
+    is_time_query = any(k in normalized for k in ["開放", "時間", "幾點", "開門", "閂門", "開幾點", "幾點閂", "小息", "午膳"])
+
+    # 1. 觸發位置回答
+    if has_library and is_location_query:
+        return (
+            "🏫 **元天圖書館導覽員上身：**\n\n"
+            "同學仔！你想上嚟搵我本尊同埋圖書館老師傾計呀？\n"
+            "我哋學校嘅實體圖書館位於 **學校三樓**，就喺 **333室隔離** 呀！🚪\n\n"
+            "行到三樓見到 333 室，望向隔離就係我哋嘅書海入口喇，等陣見！😉"
+        )
+    
+    # 2. 觸發時間回答
+    if has_library and is_time_query:
+        return (
+            "⏰ **元天圖書館開放時間：**\n\n"
+            "腦朋友同圖書館主任會喺以下時間開門歡迎大家入嚟：\n\n"
+            "* 🌅 **小息** 時間\n"
+            "* 🍱 **午膳** 時間\n"
+            "* 🌆 **放學後 至 下午 5:00**\n\n"
+            "記得睇實時間入嚟借書或者搵書睇喇！順帶一提，我哋嘅位置喺三樓 333 室隔離㗎！☕"
+        )
+        
+    return None
+
 # --- 4. 左側專業功能欄 (Sidebar) ---
 with st.sidebar:
     st.image("https://img.icons8.com/fluent/96/000000/books.png", width=80)
@@ -50,7 +90,7 @@ with st.sidebar:
     st.markdown("### 🌟 心靈充電站")
     st.info("❤️ 人際關係 / 友情 / 溝通\n\n💪 心理勵志 / 情緒舒緩\n\n🎯 考試壓力 / 讀書奮鬥\n\n🌱 孤獨焦慮 / 未來夢想")
     st.markdown("---")
-    st.caption("© 元朗天主教中學 圖書館 | 元天閱讀腦朋友 v3.0 (正式命名版)")
+    st.caption("© 元朗天主教中學 圖書館 | 元天閱讀腦朋友 v3.1 (FAQ 強化優化版)")
 
 # --- 5. 主網頁標頭（全螢幕標準寬度，確保內容清晰） ---
 st.title("📚 元天閱讀腦朋友")
@@ -134,73 +174,86 @@ if prompt := st.chat_input("你想搵咩書？或者同我傾下心事..."):
     with st.chat_message("user"):
         st.markdown(prompt)
     
-    with st.chat_message("assistant"):
-        with st.spinner("「元天閱讀腦朋友」正在聽你傾訴，並在館藏中為你挑選心靈配方..."):
-            
-            relevant_books = expand_and_search_books(prompt, all_book_lines)
-            books_context = "\n".join(relevant_books) if relevant_books else "暫時沒有完全匹配的館藏標籤。"
-            
-            agent_instruction = f"""
-            你是「元朗天主教中學 (YLCSS) 圖書館」專屬的 AI 夥伴——「元天閱讀腦朋友」。
-            
-            【目前由系統為同學精選出的相關館藏】：
-            {books_context}
-            
-            【你的核心任務】：
-            1. 請先用非常親切、溫慢、充滿校園關懷的廣東話口吻（中學老師與知心好友的雙重語氣），深入回應學生的心情 or 學術需求。
-            2. 從上方提供的【相關館藏】中，挑選出 2 至 3 本最適合、最能幫助同學的書推薦給他們。
-            3. **請使用清晰、漂亮、有條理的排版**輸出推薦書籍（嚴禁虛構列表以外的書），格式要求如下：
-               
-               ---
-               ### 📖 推薦書籍
-               - 📚 **書名**：《書名》
-               - 📌 **索書號**：[索書號]
-               - 💡 **心靈推薦原因**：[結合學生的困擾或探究主題，寫出具體且溫暖的推薦理由]
-               - 🔍 **館藏動態查詢**：[👉 點擊這裡查看借閱狀態](https://ylcss.trccloud.hk/opac/search/[處理後的書名])
-               
-               ---
-               
-               ⚠️【網址生成最高指導原則（極重要）】：
-               在填寫上方網址的 `[處理後的書名]` 時，你必須對書名進行以下符號編碼轉換：
-               - **規則 A (空格轉換)**：如果書名內含有「任何空格」（不論前後或中間），你必須將所有的空格全部替換為「+」號。
-                 * 例如："Harry Potter" 必須轉換為 `Harry+Potter`
-               - **規則 B (冒號轉換)**：如果書名內含有「半形冒號 :」或「全形冒號 ：」，你必須將所有的冒號全部替換為 `%%3A`（註：在代碼中請輸出為 %%3A 以便正常解析）。
-                 * 例如："歷史：中港關係" 必須轉換為 `歷史%%3A中港關係`
-               
-               嚴禁在網址括號 () 內留有任何原始空格 or 冒號，確保同學點擊時能直接直達學校的 OPAC 系統。
-            
-            4. 如果【相關館藏】為空，請溫柔地安慰同學，並鼓勵他們換個說法，或隨時親自來圖書館櫃檯搵老師、搵「腦朋友」本尊傾計。
-            
-            同學現在說："{prompt}"
-            """
-            
-            # --- 多 Key 輪替重試機制 ---
-            response_text = None
-            api_call_success = False
-            
-            if not api_key_pool:
-                st.error("❌ 系統錯誤：目前沒有可用的 API Key，請檢查 Secrets 設定。")
-            else:
-                for idx, current_key in enumerate(api_key_pool):
-                    try:
-                        genai.configure(api_key=current_key)
-                        temp_model = genai.GenerativeModel('gemini-2.5-flash')
-                        
-                        response = temp_model.generate_content(agent_instruction)
-                        response_text = response.text
-                        api_call_success = True
-                        break
-                    except Exception as e:
-                        err_msg = str(e)
-                        if "429" in err_msg or "quota" in err_msg.lower():
-                            if idx < len(api_key_pool) - 1:
-                                continue
-                            else:
-                                st.warning("☕ **閱讀腦朋友悄悄話：**\n\n唔好意思啊同學仔！依家圖書館櫃檯真係太熱鬧啦（所有智能通道正忙），腦朋友需要倒杯水、抖 1 分鐘。請你等陣（大約一分鐘後）再同我傾過啦！如果急嘅話，隨時歡迎你直接行過嚟圖書館櫃檯搵老師傾計㗎！😊")
-                        else:
-                            st.error(f"腦朋友思考中遇到非流量錯誤。錯誤代碼：{err_msg[:50]}")
+    # ------------------------------------------
+    # 【核心嵌入點】優先進行本地 FAQ 攔截檢查
+    # ------------------------------------------
+    faq_response = check_campus_faq(prompt)
+    
+    if faq_response:
+        # 如果命中圖書館位置/時間問題，直接回覆，不經大模型
+        with st.chat_message("assistant"):
+            st.markdown(faq_response)
+        st.session_state.messages.append({"role": "assistant", "content": faq_response})
+        
+    else:
+        # 未命中 FAQ 則流暢走原本的大模型推薦與 Key 輪替邏輯
+        with st.chat_message("assistant"):
+            with st.spinner("「元天閱讀腦朋友」正在聽你傾訴，並在館藏中為你挑選心靈配方..."):
+                
+                relevant_books = expand_and_search_books(prompt, all_book_lines)
+                books_context = "\n".join(relevant_books) if relevant_books else "暫時沒有完全匹配的館藏標籤。"
+                
+                agent_instruction = f"""
+                你是「元朗天主教中學 (YLCSS) 圖書館」專屬的 AI 夥伴——「元天閱讀腦朋友」。
+                
+                【目前由系統為同學精選出的相關館藏】：
+                {books_context}
+                
+                【你的核心任務】：
+                1. 請先用非常親切、溫慢、充滿校園關懷的廣東話口吻（中學老師與知心好友的雙重語氣），深入回應學生的心情 or 學術需求。
+                2. 從上方提供的【相關館藏】中，挑選出 2 至 3 本最適合、最能幫助同學的書推薦給他們。
+                3. **請使用清晰、漂亮、有條理的排版**輸出推薦書籍（嚴禁虛構列表以外的書），格式要求如下：
+                   
+                   ---
+                   ### 📖 推薦書籍
+                   - 📚 **書名**：《書名》
+                   - 📌 **索書號**：[索書號]
+                   - 💡 **心靈推薦原因**：[結合學生的困擾或探究主題，寫出具體且溫暖的推薦理由]
+                   - 🔍 **館藏動態查詢**：[👉 點擊這裡查看借閱狀態](https://ylcss.trccloud.hk/opac/search/[處理後的書名])
+                   
+                   ---
+                   
+                   ⚠️【網址生成最高指導原則（極重要）】：
+                   在填寫上方網址的 `[處理後的書名]` 時，你必須對書名進行以下符號編碼轉換：
+                   - **規則 A (空格轉換)**：如果書名內含有「任何空格」（不論前後或中間），你必須將所有的空格全部替換為「+」號。
+                     * 例如："Harry Potter" 必須轉換為 `Harry+Potter`
+                   - **規則 B (冒號轉換)**：如果書名內含有「半形冒號 :」或「全形冒號 ：」，你必須將所有的冒號全部替換為 `%%3A`（註：在代碼中請輸出為 %%3A 以便正常解析）。
+                     * 例如："歷史：中港關係" 必須轉換為 `歷史%%3A中港關係`
+                   
+                   嚴禁在網址括號 () 內留有任何原始空格 or 冒號，確保同學點擊時能直接直達學校的 OPAC 系統。
+                
+                4. 如果【相關館藏】為空，請溫柔地安慰同學，並鼓勵他們換個說法，或隨時親自來圖書館櫃檯搵老師、搵「腦朋友」本尊傾計。
+                
+                同學現在說："{prompt}"
+                """
+                
+                # --- 多 Key 輪替重試機制 ---
+                response_text = None
+                api_call_success = False
+                
+                if not api_key_pool:
+                    st.error("❌ 系統錯誤：目前沒有可用的 API Key，請檢查 Secrets 設定。")
+                else:
+                    for idx, current_key in enumerate(api_key_pool):
+                        try:
+                            genai.configure(api_key=current_key)
+                            temp_model = genai.GenerativeModel('gemini-2.5-flash')
+                            
+                            response = temp_model.generate_content(agent_instruction)
+                            response_text = response.text
+                            api_call_success = True
                             break
-            
-            if api_call_success and response_text:
-                st.markdown(response_text)
-                st.session_state.messages.append({"role": "assistant", "content": response_text})
+                        except Exception as e:
+                            err_msg = str(e)
+                            if "429" in err_msg or "quota" in err_msg.lower():
+                                if idx < len(api_key_pool) - 1:
+                                    continue
+                                else:
+                                    st.warning("☕ **閱讀腦朋友悄悄話：**\n\n唔好意思啊同學仔！依家圖書館櫃檯真係太熱鬧啦（所有智能通道正忙），腦朋友需要倒杯水、抖 1 分鐘。請你等陣（大約一分鐘後）再同我傾過啦！如果急嘅話，隨時歡迎你直接行過嚟圖書館櫃檯搵老師傾計㗎！😊")
+                            else:
+                                st.error(f"腦朋友思考中遇到非流量錯誤。錯誤代碼：{err_msg[:50]}")
+                                break
+                                
+                if api_call_success and response_text:
+                    st.markdown(response_text)
+                    st.session_state.messages.append({"role": "assistant", "content": response_text})
