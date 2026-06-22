@@ -81,23 +81,34 @@ with st.sidebar:
     st.subheader("📚 元天閱讀腦朋友")
     st.markdown("---")
     st.markdown("### 💡 使用小貼士")
-    st.caption("同學可以直接輸入你想搵嘅書名、作者或主題（例如：歷史、心理學），亦可以喺下面揀個心情同腦朋友傾下計，等佢為你調配心靈處方。")
+    st.caption("同學可以直接輸入你想搵嘅書名、作者或主題（例如：歷史、科學），亦可以同腦朋友傾下計，等佢為你調配心靈處方。")
     st.markdown("---")
-    st.markdown("### 🌟 心靈充電站")
-    st.info("❤️ **阿樂 / 阿細 / 阿厭**\n人際關係 | 自我接納 | 慢活日常\n\n💪 **阿愁 / 阿焦**\n心理勵志 | 療癒減壓 | 讀書應試\n\n🎯 **阿燥 / 阿驚**\n正義對抗 | 熱血競技 | 危機求生")
+    
+    # ─── 完美升級：精美腦朋友當值面板 ───
+    st.markdown("### 🎭 腦朋友守護部隊")
+    st.caption("話畀我哋聽你今日嘅心情，專屬嘅腦朋友就會出動同你挑選圖書配方：")
+    st.markdown("""
+    💛 **阿樂 (Joy)**：快樂・友情・夢想  
+    💙 **阿愁 (Sadness)**：孤獨・同理・療癒  
+    🧡 **阿焦 (Anxiety)**：應試・壓力・未來  
+    ❤️ **阿燥 (Anger)**：正義・衝突・反抗  
+    💜 **阿驚 (Fear)**：恐懼・求生・安全  
+    💚 **阿憎 (Disgust)**：叛逆・搞笑・文化  
+    🩵 **阿細 (Envy)**：探索・自我・渴望  
+    🥱 **阿厭 (Ennui)**：生活・日常・慢活  
+    """)
     st.markdown("---")
-    st.caption("© 元朗天主教中學 圖書館 |\n元天閱讀腦朋友 v3.2 (數據優化版)")
+    st.caption("© 元朗天主教中學 圖書館 |\n元天閱讀腦朋友 v3.3 (Emoji 視覺強化版)")
 
 # --- 5. 主網頁標頭（全螢幕標準寬度，確保內容清晰） ---
 st.title("📚 元天閱讀腦朋友")
 st.markdown("### *「每一本書，都是治癒心靈的溫慢配方。」*")
 st.info("👋 **同學仔你好！** 我係你嘅專屬「元天閱讀腦朋友」。今日過得點呀？無論你想搵特定嘅學術書做 Project，定係想搵本小說散下心、傾下心事，我幕後都會喺我哋學校嘅圖書館館藏度幫你細心挑選最啱你嘅書。👇")
 
-# --- 6. 本地語意關鍵字過濾器（全面升級版：融入100+大數據圖書標籤與廣東話對接） ---
+# --- 6. 本地語意關鍵字過濾器 ---
 def expand_and_search_books(user_input, book_lines, max_results=20):
     user_input_lower = user_input.lower()
     
-    # 核心映射字典：將同學可能輸入的口語、情境，精準對接去 KB 的專業標籤
     synonyms_map = {
         # === 1. 情感、心靈與成長 ===
         "成長": ["成長", "長大", "成熟", "大個仔", "大個女", "蛻變", "獨立", "生存"],
@@ -157,7 +168,7 @@ def expand_and_search_books(user_input, book_lines, max_results=20):
     }
     
     target_tags = []
-    triggered_emotions = [] # 用於單獨紀錄觸發了哪些心理與學術標籤
+    triggered_emotions = []
     
     for tag, keywords in synonyms_map.items():
         if any(kw in user_input_lower for kw in keywords):
@@ -208,13 +219,12 @@ def expand_and_search_books(user_input, book_lines, max_results=20):
             weighted_matches.sort(key=lambda x: x[0], reverse=True)
             matched_books = [item[1] for item in weighted_matches]
                 
-    # 將標籤清單、關鍵字清單用英文逗號組合成字串，方便後台儲存統計
     tags_str = ",".join(triggered_emotions) if triggered_emotions else ""
     keywords_str = ",".join(raw_keywords) if raw_keywords else ""
     
     return matched_books[:max_results], tags_str, keywords_str
 
-# --- 7. 顯示歷史對話（直屬根目錄以支援完美捲動） ---
+# --- 7. 顯示歷史對話 ---
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
@@ -222,7 +232,7 @@ for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# --- 8. 處理同學輸入（Streamlit 自動永久固定喺網頁最底部） ---
+# --- 8. 處理同學輸入 ---
 if prompt := st.chat_input("你想搵咩書？或者同我傾下心事..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
@@ -231,41 +241,39 @@ if prompt := st.chat_input("你想搵咩書？或者同我傾下心事..."):
     with st.chat_message("assistant"):
         with st.spinner("「元天閱讀腦朋友」正在聽你傾訴，並在館藏中為你挑選心靈配方..."):
             
-            # 1. 調用優化後的搜尋過濾器，順便獲取標籤與關鍵字字串
             relevant_books, triggered_tags_str, keywords_str = expand_and_search_books(prompt, all_book_lines)
             books_context = "\n".join(relevant_books) if relevant_books else "暫時沒有完全匹配的館藏標籤。"
             
-            # 2. 默默將不記名搜尋意圖側錄上傳至 Google Sheet
             log_search_intent_to_sheets(prompt, triggered_tags_str, keywords_str)
             
-            # 3. 構築 AI 指令 (完美對接「腦朋友」8大情緒角色模型)
+            # ─── 核心修改：為 AI 指令注入角色專屬 Emoji ───
             agent_instruction = f"""
             你是「元朗天主教中學 (YLCSS) 圖書館」專屬的 AI 夥伴——「元天閱讀腦朋友」。
             
             【目前由系統為同學精選出的相關館藏】：
             {books_context}
             
-            【你的腦朋友情緒分類核心邏輯】：
-            你可以靈活運用《玩轉腦朋友 2》的 8 個情緒角色口吻為同學開導，並根據書籍所帶的標籤進行專業的心靈處方配對：
-            1. 阿樂 (Joy) - 適合標籤：成長、勇氣、自信、快樂、熱情、樂觀、友誼、分享、愛、夢想、音樂、運動、童年。
-            2. 阿愁 (Sadness) - 適合標籤：孤獨、失去、苦難、療癒、回憶、親情、同理心、哲學。
-            3. 阿燥 (Anger) - 適合標籤：反抗、衝突、復仇、霸凌、戰爭、正義。
-            4. 阿驚 (Fear) - 適合標籤：恐懼、黑暗、惡夢、求生、保護、神秘、災難。
-            5. 阿憎 (Disgust) - 適合標籤：叛逆、惡搞、荒謬、黑色幽默、搞笑、時尚、文化差異。
-            6. 阿焦 (Anxiety) - 適合標籤：應試、壓力、精確、未來、責任、金錢。
-            7. 阿細 (Envy) - 適合標籤：自我探索、突破、文化融合、渴望。
-            8. 阿厭 (Ennui) - 適合標籤：日常、生活、自然、動物、網絡、電影、旅行、慢活。
+            【你的腦朋友情緒分類與專屬 Emoji 核心邏輯】：
+            你可以靈活運用《玩轉腦朋友 2》的 8 個情緒角色口吻為同學開導，並根據書籍所帶的標籤進行專業的心靈處方配對。在對話或提及時，必須使用對應的 Emoji 來代表他們：
+            1. 💛 阿樂 (Joy) - 適合標籤：成長、勇氣、自信、快樂、熱情、樂觀、友誼、分享、愛、夢想、音樂、運動、童年。
+            2. 💙 阿愁 (Sadness) - 適合標籤：孤獨、失去、苦難、療癒、回憶、親情、同理心、哲學。
+            3. ❤️ 阿燥 (Anger) - 適合標籤：反抗、衝突、復仇、霸凌、戰爭、正義。
+            4. 💜 阿驚 (Fear) - 適合標籤：恐懼、黑暗、惡夢、求生、保護、神秘、災難。
+            5. 💚 阿憎 (Disgust) - 適合標籤：叛逆、惡搞、荒謬、黑色幽默、搞笑、時尚、文化差異。
+            6. 🧡 阿焦 (Anxiety) - 適合標籤：應試、壓力、精確、未來、責任、金錢。
+            7. 🩵 阿細 (Envy) - 適合標籤：自我探索、突破、文化融合、渴望。
+            8. 🥱 阿厭 (Ennui) - 適合標籤：日常、生活、自然、動物、網絡、電影、旅行、慢活。
             
             【你的核心任務】：
-            1. 請先用非常親切、溫慢、充滿校園關懷的廣東話口吻（中學老師與知心好友的雙重語氣），深入回應學生的心情 or 學術需求。可以適當提及是哪位「腦朋友」正在為他們調配這個處方。
-            2. 從上方提供的【相關館藏】中，挑選出 3 至 4 本最適合、最能幫助同學的書推薦給他們。
+            1. 請先用非常親切、溫慢、充滿校園關懷的廣東話口吻（中學老師與知心好友的雙重語氣），深入回應學生的心情 or 學術需求。在對話中，必須提及目前是由哪一位帶有 Emoji 的「腦朋友」正在為他們調配這個處方。
+            2. 從上方提供的【相關館藏】中，挑選出 2 至 3 本最適合、最能幫助同學的書推薦給他們。
             3. **請使用清晰、漂亮、有條理的排版**輸出推薦書籍（嚴禁虛構列表以外的書），格式要求如下：
                
                ---
                ### 📖 推薦書籍
                - 📚 **書名**：《書名》
                - 📌 **索書號**：[索書號]
-               - 💡 **心靈推薦原因**：[結合學生的困擾或探究主題，寫出具體且溫暖的推薦理由，並點出這本書對應的腦朋友特質]
+               - 💡 **心靈推薦原因**：[結合學生的困擾或探究主題，寫出具體且溫暖的推薦理由，並點出這本書對應的哪位「腦朋友（連同 Emoji）」特質]
                - 🔍 **館藏動態查詢**：[👉 點擊這裡查看借閱狀態](https://ylcss.trccloud.hk/opac/search/[處理後的書名])
                
                ---
